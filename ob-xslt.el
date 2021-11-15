@@ -110,7 +110,7 @@ STDERR with `org-babel-eval-error-notify'."
     (with-temp-file xml-file (insert xml))
     (with-current-buffer err-buff (erase-buffer))
     (setq exit-code
-	  (shell-command (concat "xsltproc " xsl-file " " xml-file) output-file err-buff)
+	  (shell-command (format "saxon %s %s" xml-file xsl-file) output-file err-buff)
 	  )
       (if (or (not (numberp exit-code)) (> exit-code 0))
 	  (progn
