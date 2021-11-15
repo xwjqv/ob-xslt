@@ -96,7 +96,7 @@ This function is called by `org-babel-execute-src-block'"
                                          (cdr var))))
                              vars
                              " "))
-       (xml (cdr (assq 'input (vars))))
+       (xml (cdr (assq 'input vars)))
        (xml (s-replace-regexp "^#\+.*\n" "" xml))) ; remove orgmode markup from input
 
     (org-babel-eval-xslt body xml param-str)
