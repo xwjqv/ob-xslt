@@ -42,10 +42,13 @@
 
 ;; possibly require modes required for your language
 (define-derived-mode xslt-mode nxml-mode "xslt"
-  "Major mode for editing xslt templates."
-  )
+  "Major mode for editing xslt templates.")
 
 
+(defcustom org-babel-xslt-command "saxon"
+  "Name of xslt engine"
+  :group 'org-babel
+  :type 'string)
 
 ;; optionally define a file extension for this language
 (add-to-list 'org-babel-tangle-lang-exts '("xslt" . "xslt"))
@@ -120,7 +123,7 @@ STDERR with `org-babel-eval-error-notify'."
     (with-temp-file xml-file (insert xml))
     (with-current-buffer err-buff (erase-buffer))
     (setq exit-code
-	  (shell-command (format "saxon %s %s %s"  param-str xml-file xsl-file) output-file err-buff))
+	  (shell-command (format "%s %s %s %s"  org-babel-xslt-command param-str xml-file xsl-file) output-file err-buff))
       (if (or (not (numberp exit-code)) (> exit-code 0))
 	  (progn
 	    (with-current-buffer err-buff
