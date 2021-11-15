@@ -86,10 +86,20 @@
 This function is called by `org-babel-execute-src-block'"
   (message "executing xslt source code block")
   (let*
-      ((xml (cdr (cdr (assoc :var params) ) ))
+      (
+       ;; (xml (cdr (cdr (assoc :var params) ) ))
+       (vars (org-babel--get-vars params))
+       (param-str (mapconcat (lambda (var)
+                               (when (not (eq (car var) 'input))
+                                 (format "%S=%S"
+                                         (car var)
+                                         (cdr var))))
+                             params
+                             " "))
+       (xml (cdr (assq 'input (vars))))
        (xml (s-replace-regexp "^#\+.*\n" "" xml))) ; remove orgmode markup from input
 
-    (org-babel-eval-xslt "xsltproc" body xml)
+    (org-babel-eval-xslt body xml param-str)
     ;; when forming a shell command, or a fragment of code in some
     ;; other language, please preprocess any file names involved with
     ;; the function `org-babel-process-file-name'. (See the way that
@@ -97,7 +107,7 @@ This function is called by `org-babel-execute-src-block'"
     ))
 ;
 
-(defun org-babel-eval-xslt (cmd body xml)
+(defun org-babel-eval-xslt (body xml param-str)
   "Run CMD on BODY.
 If CMD succeeds then return its results, otherwise display
 STDERR with `org-babel-eval-error-notify'."
@@ -110,8 +120,7 @@ STDERR with `org-babel-eval-error-notify'."
     (with-temp-file xml-file (insert xml))
     (with-current-buffer err-buff (erase-buffer))
     (setq exit-code
-	  (shell-command (format "saxon %s %s" xml-file xsl-file) output-file err-buff)
-	  )
+	  (shell-command (format "saxon %s %s %s"  param-str xml-file xsl-file) output-file err-buff))
       (if (or (not (numberp exit-code)) (> exit-code 0))
 	  (progn
 	    (with-current-buffer err-buff
