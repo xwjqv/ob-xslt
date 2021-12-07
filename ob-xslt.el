@@ -61,9 +61,9 @@
 ;; be called by the `org-babel-execute:xslt' function below.
 (defun org-babel-expand-body:xslt (body params &optional processed-params)
   "Expand BODY according to PARAMS, return the expanded body."
-  ;(require 'inf-xslt) : TODO check if needed
+                                        ;(require 'inf-xslt) : TODO check if needed
   body ; TODO translate params to xml variables
-)
+  )
 
 ;; This is the main function which is called to evaluate a code
 ;; block.
@@ -108,36 +108,38 @@ This function is called by `org-babel-execute-src-block'"
     ;; the function `org-babel-process-file-name'. (See the way that
     ;; function is used in the language files)
     ))
-;
+                                        ;
 
 (defun org-babel-eval-xslt (body xml param-str)
   "Run CMD on BODY.
 If CMD succeeds then return its results, otherwise display
 STDERR with `org-babel-eval-error-notify'."
-  (let ((err-buff (get-buffer-create " *Org-Babel Error*"))
-	(xml-file (org-babel-temp-file "ob-xslt-xml-"))
-	(xsl-file (org-babel-temp-file "ob-xslt-xsl-"))
-	(output-file (org-babel-temp-file "ob-xslt-out-"))
-	exit-code)
+  (let (
+        (xml-file (org-babel-temp-file "ob-xslt-xml-"))
+        (xsl-file (org-babel-temp-file "ob-xslt-xsl-"))
+        ;; (output-file (org-babel-temp-file "ob-xslt-out-"))
+        exit-code)
     (with-temp-file xsl-file (insert body))
     (with-temp-file xml-file (insert xml))
-    (with-current-buffer err-buff (erase-buffer))
-    (setq exit-code
-	  (shell-command (format "%s %s %s %s"  org-babel-xslt-command param-str xml-file xsl-file) output-file err-buff))
+    ;; (with-current-buffer err-buff (erase-buffer))
+    ;; (setq exit-code
+    ;;       (shell-command (format "%s %s %s %s"  org-babel-xslt-command param-str xml-file xsl-file) output-file err-buff))
+    (with-temp-buffer
+        (setq exit-code (apply #'call-process org-babel-xslt-command nil t nil (remq "" (list param-str xml-file xsl-file))))
       (if (or (not (numberp exit-code)) (> exit-code 0))
-	  (progn
-	    (with-current-buffer err-buff
-	      (org-babel-eval-error-notify exit-code (buffer-string)))
-	    (save-excursion
-	      (when (get-buffer org-babel-error-buffer-name)
-		(with-current-buffer org-babel-error-buffer-name
-		  (unless (derived-mode-p 'compilation-mode)
-		    (compilation-mode))
-		  ;; Compilation-mode enforces read-only, but Babel expects the buffer modifiable.
-		  (setq buffer-read-only nil))))
-	    nil)
-	; return the contents of output file
-	(with-current-buffer output-file (buffer-string)))))
+          (progn
+            (org-babel-eval-error-notify exit-code (buffer-string))
+            (save-excursion
+              (when (get-buffer org-babel-error-buffer-name)
+                (with-current-buffer org-babel-error-buffer-name
+                  (unless (derived-mode-p 'compilation-mode)
+                    (compilation-mode))
+                  ;; Compilation-mode enforces read-only, but Babel expects the buffer modifiable.
+                  (setq buffer-read-only nil))))
+            nil)
+                                        ; return the contents of output file
+        ;; (with-current-buffer output-file (buffer-string))
+        (buffer-string)))))
 
 
 ;; This function should be used to assign any variables in params in
