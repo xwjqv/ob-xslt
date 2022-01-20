@@ -93,10 +93,8 @@ This function is called by `org-babel-execute-src-block'"
        ;; (xml (cdr (cdr (assoc :var params) ) ))
        (vars (org-babel--get-vars params))
        (param-items '())
-
        (xml (cdr (assq 'input vars)))
        (xml (s-replace-regexp "^#\+.*\n" "" xml))) ; remove orgmode markup from input
-    (param-str )
     (mapcar (lambda (var)
               (when (not (eq (car var) 'input))
                 (add-to-list 'param-items (format "%s=%s" (car var) (cdr var)) t)))
@@ -120,8 +118,8 @@ STDERR with `org-babel-eval-error-notify'."
         exit-code)
     (with-temp-file xsl-file (insert body))
     (with-temp-file xml-file (insert xml))
-    (add-to-list 'param-items xml-file)
-    (add-to-list 'param-items xsl-file)
+    (add-to-list 'param-items xml-file t)
+    (add-to-list 'param-items xsl-file t)
     ;; (with-current-buffer err-buff (erase-buffer))
     ;; (setq exit-code
     ;;       (shell-command (format "%s %s %s %s"  org-babel-xslt-command param-str xml-file xsl-file) output-file err-buff))
