@@ -102,7 +102,7 @@ This function is called by `org-babel-execute-src-block'"
        (xml (cdr (assq 'input vars)))
        (xml (s-replace-regexp "^#\+.*\n" "" xml))) ; remove orgmode markup from input
 
-    (org-babel-eval-xslt body xml param-str)
+    (org-babel-eval-xslt body xml (s-trim param-str))
     ;; when forming a shell command, or a fragment of code in some
     ;; other language, please preprocess any file names involved with
     ;; the function `org-babel-process-file-name'. (See the way that
