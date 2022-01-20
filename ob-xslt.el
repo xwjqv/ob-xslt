@@ -94,7 +94,7 @@ This function is called by `org-babel-execute-src-block'"
        (vars (org-babel--get-vars params))
        (param-str (mapconcat (lambda (var)
                                (when (not (eq (car var) 'input))
-                                 (format "%S=%S"
+                                 (format "%S=%s"
                                          (car var)
                                          (cdr var))))
                              vars
