@@ -92,17 +92,16 @@ This function is called by `org-babel-execute-src-block'"
       (
        ;; (xml (cdr (cdr (assoc :var params) ) ))
        (vars (org-babel--get-vars params))
-       (param-str (mapconcat (lambda (var)
-                               (when (not (eq (car var) 'input))
-                                 (format "%S=%s"
-                                         (car var)
-                                         (cdr var))))
-                             vars
-                             " "))
+       (param-items '())
+
        (xml (cdr (assq 'input vars)))
        (xml (s-replace-regexp "^#\+.*\n" "" xml))) ; remove orgmode markup from input
-
-    (org-babel-eval-xslt body xml (s-trim param-str))
+    (param-str )
+    (mapcar (lambda (var)
+              (when (not (eq (car var) 'input))
+                (add-to-list 'param-items (format "%s=%s" (car var) (cdr var)) t)))
+            vars)
+    (org-babel-eval-xslt body xml param-items)
     ;; when forming a shell command, or a fragment of code in some
     ;; other language, please preprocess any file names involved with
     ;; the function `org-babel-process-file-name'. (See the way that
@@ -110,7 +109,7 @@ This function is called by `org-babel-execute-src-block'"
     ))
                                         ;
 
-(defun org-babel-eval-xslt (body xml param-str)
+(defun org-babel-eval-xslt (body xml param-items)
   "Run CMD on BODY.
 If CMD succeeds then return its results, otherwise display
 STDERR with `org-babel-eval-error-notify'."
@@ -121,11 +120,13 @@ STDERR with `org-babel-eval-error-notify'."
         exit-code)
     (with-temp-file xsl-file (insert body))
     (with-temp-file xml-file (insert xml))
+    (add-to-list 'param-items xml-file)
+    (add-to-list 'param-items xsl-file)
     ;; (with-current-buffer err-buff (erase-buffer))
     ;; (setq exit-code
     ;;       (shell-command (format "%s %s %s %s"  org-babel-xslt-command param-str xml-file xsl-file) output-file err-buff))
     (with-temp-buffer
-        (setq exit-code (apply #'call-process org-babel-xslt-command nil t nil (remq "" (list param-str xml-file xsl-file))))
+      (setq exit-code (apply #'call-process org-babel-xslt-command nil t nil (remq "" param-items)))
       (if (or (not (numberp exit-code)) (> exit-code 0))
           (progn
             (org-babel-eval-error-notify exit-code (buffer-string))
