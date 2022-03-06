@@ -6,6 +6,7 @@
 ;; Keywords: literate programming, reproducible research
 ;; Homepage: https://orgmode.org
 ;; Version: 0.01
+;; Package-Requires: ((emacs "25.1"))
 
 ;;; License:
 
@@ -45,7 +46,8 @@
   "Major mode for editing xslt templates.")
 
 
-(defcustom org-babel-xslt-command "saxon"
+(defcustom org-babel-xslt-command
+  (car (seq-filter 'executable-find '("saxon" "xsltproc")))
   "Name of xslt engine"
   :group 'org-babel
   :type 'string)
@@ -105,7 +107,6 @@ This function is called by `org-babel-execute-src-block'"
     ;; the function `org-babel-process-file-name'. (See the way that
     ;; function is used in the language files)
     ))
-                                        ;
 
 (defun org-babel-eval-xslt (body xml param-items)
   "Run CMD on BODY.
@@ -115,16 +116,18 @@ STDERR with `org-babel-eval-error-notify'."
         (xml-file (org-babel-temp-file "ob-xslt-xml-"))
         (xsl-file (org-babel-temp-file "ob-xslt-xsl-"))
         ;; (output-file (org-babel-temp-file "ob-xslt-out-"))
+        cmd-params
         exit-code)
     (with-temp-file xsl-file (insert body))
     (with-temp-file xml-file (insert xml))
-    (add-to-list 'param-items xml-file t)
-    (add-to-list 'param-items xsl-file t)
+    (pcase org-babel-xslt-command
+      ("saxon" (setq cmd-params (append param-items (list xml-file xsl-file))))
+      ("xsltproc" (setq cmd-params (append param-items (list xsl-file xml-file)))))
     ;; (with-current-buffer err-buff (erase-buffer))
     ;; (setq exit-code
     ;;       (shell-command (format "%s %s %s %s"  org-babel-xslt-command param-str xml-file xsl-file) output-file err-buff))
     (with-temp-buffer
-      (setq exit-code (apply #'call-process org-babel-xslt-command nil t nil (remq "" param-items)))
+      (setq exit-code (apply #'call-process org-babel-xslt-command nil t nil (remq "" cmd-params)))
       (if (or (not (numberp exit-code)) (> exit-code 0))
           (progn
             (org-babel-eval-error-notify exit-code (buffer-string))
